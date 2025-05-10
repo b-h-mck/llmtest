@@ -1,0 +1,23 @@
+{
+    "version": "0.2.0",
+    "configurations": [
+        {
+            "type": "node",
+            "request": "launch",
+            "name": "Debug Svelte App",
+            "program": "${workspaceFolder}/node_modules/vite/bin/vite.js",
+            "args": ["dev"],
+            "runtimeArgs": ["--loader", "ts-node/esm"],
+            "cwd": "${workspaceFolder}",
+            "env": {
+                "NODE_ENV": "development"
+            },
+            "sourceMaps": true,
+            "outFiles": ["${workspaceFolder}/.svelte-kit/**/*.js"],
+            "resolveSourceMapLocations": [
+                "${workspaceFolder}/.svelte-kit/**",
+                "${workspaceFolder}/src/**"
+            ]
+        }
+    ]
+}
