@@ -1,27 +1,79 @@
 <script lang="ts">
-    import type { ReasonedPayHours, WorkPattern } from "./Models";
+    import type { Change, EmployeeHours } from "./Models";
+    
 
-    export let workPatterns: WorkPattern[] = [];
-    export let payHours: ReasonedPayHours[] = [];
-    export let onEdit: (index: number, day: number, value: number) => void;
-    export let onEditName: (index: number, value: string) => void = () => {};
-    export let editableNames: boolean = false;
-
-    function handleEdit(index: number, day: number, event: Event) {
-        const input = event.target as HTMLInputElement;
-        const value = parseFloat(input.value);
-        if (!isNaN(value)) {
-            onEdit(index, day, value);
-        }
+    interface Props {
+        employeeHours: EmployeeHours[];
+        changes?: Change[];
+        onSelect: (employeeIndex: number, dayIndex: number) => void;
+        onEdit: (employeeIndex: number, employeeHours: EmployeeHours) => void;
     }
 
+    let { employeeHours, changes, onEdit, onSelect } : Props = $props();
+
+    let updatedEmployeeHours = $derived.by(() => {
+        const result = employeeHours.map((employee) => ({
+                ...employee,
+                days: employee.days.map((day) => ({
+                    ...day,
+                    changed: false,
+                })),
+            }));
+        if (changes) {
+            changes.forEach((change) => {
+                const { employeeIndex, dayIndex, newWorkHours, newLeaveHours } = change;
+
+                if (employeeIndex >= 0 && employeeIndex < result.length) {
+                    if (dayIndex >= 0 && dayIndex < result[employeeIndex].days.length) {
+                        result[employeeIndex].days[dayIndex].changed = true;
+                        if (newWorkHours !== null && newWorkHours !== undefined) {
+                            result[employeeIndex].days[dayIndex].workHours = newWorkHours;
+                        }
+                        if (newLeaveHours !== null && newLeaveHours !== undefined) {
+                            result[employeeIndex].days[dayIndex].leaveHours = newLeaveHours;
+                        }
+                    }
+                }
+            });
+        }
+        return result;
+    });
+
+    
     function handleEditName(index: number, event: Event) {
         const input = event.target as HTMLInputElement;
         const value = input.value.trim();
-        onEditName(index, value);
+        if (value) {
+            onEdit(index, { ...updatedEmployeeHours[index], employee: value });
+        }
     }
 
-    const rows : (ReasonedPayHours | WorkPattern)[] = workPatterns.length > 0 ? workPatterns : payHours;
+    function handleEditWorkHours(employeeIndex: number, dayIndex: number, event: Event) {
+        const input = event.target as HTMLInputElement;
+        const value = parseFloat(input.value);
+        if (!isNaN(value)) {
+            const updatedEmployee = { ...updatedEmployeeHours[employeeIndex] };
+            updatedEmployee.days[dayIndex].workHours = value;
+            onEdit(employeeIndex, updatedEmployee);
+        }
+    }
+
+    function handleEditLeaveHours(employeeIndex: number, dayIndex: number, event: Event) {
+        const input = event.target as HTMLInputElement;
+        const value = parseFloat(input.value);
+        if (!isNaN(value)) {
+            const updatedEmployee = { ...updatedEmployeeHours[employeeIndex] };
+            updatedEmployee.days[dayIndex].leaveHours = value;
+            onEdit(employeeIndex, updatedEmployee);
+        }
+    }
+
+    function handleClick(employeeIndex: number, dayIndex: number) {
+        console.log("Clicked on cell", employeeIndex, dayIndex);
+        onSelect(employeeIndex, dayIndex);
+    }
+
+
 </script>
 
 <table>
@@ -35,65 +87,42 @@
             <th>Fri</th>
             <th>Sat</th>
             <th>Sun</th>
-            <th></th>
         </tr>
     </thead>
     <tbody>
-        {#each rows as row, index}
+        {#each updatedEmployeeHours as employeeHours, employeeIndex}
             <tr>
                 <th>
-                    {#if editableNames}
-                        <input
-                            type="text"
-                            value={row.employee}
-                            on:input={(event) => handleEditName(index, event)}
-                        />
-                    {:else}
-                        {row.employee}
-                    {/if}
+                    <input
+                        type="text"
+                        class="employee-name"
+                        value={employeeHours.employee}
+                        oninput={(event) => handleEditName(employeeIndex, event)}
+                    />
                 </th>
-                {#each row.workHours as time, day}
-                    <td>
-                        <div class="time-cell">
+                {#each employeeHours.days as {workHours, leaveHours, changed}, dayIndex}
+                    <td onclick={() => handleClick(employeeIndex, dayIndex)} class={{changed}}>
+                        <label>
+                            <span>W</span>
                             <input
-                                type="number"
-                                value={time === 0 ? "" : time}
-                                on:input={(event) =>
-                                    handleEdit(index, day, event)}
+                                type="text"
+                                class="hours"
+                                value={workHours === 0 ? "" : workHours}
+                                oninput={(event) => handleEditWorkHours(employeeIndex, dayIndex, event)}
                             />
-                        </div>
+                        </label>
+                        <label>
+                            <span>L</span>
+                            <input
+                                type="text"
+                                class="hours"
+                                value={leaveHours === 0 ? "" : leaveHours}
+                                oninput={(event) => handleEditLeaveHours(employeeIndex, dayIndex, event)}
+                            />
+                        </label>
                     </td>
                 {/each}
-                <td>
-                    {#if 'reasoning' in row && row.reasoning}
-                        <button
-                            class="message-icon"
-                            on:click={() => {
-                                // Handle message icon click
-                                console.log(row.reasoning);
-                            }}>
-                            <span>ℹ️</span>
-                        </button>
-                    {/if}
-                </td>
             </tr>
-            {#if 'leaveHours' in row && row.leaveHours}
-                <tr>
-                    <th>Leave:</th>
-                    {#each row.leaveHours as time, day}
-                        <td>
-                            <div class="time-cell">
-                                <input
-                                    type="number"
-                                    value={time === 0 ? "" : time}
-                                    on:input={(event) =>
-                                        handleEdit(index, day, event)}
-                                />
-                            </div>
-                        </td>
-                    {/each}
-                </tr>
-            {/if}
         {/each}
     </tbody>
 </table>
@@ -112,28 +141,34 @@
     }
 
     td {
-        max-width: 2em;
+        max-width: 4em;
+        /*display: flex;
+        flex-direction: column;*/
     }
 
-    input[type="number"],
-    input[type="text"] {
+    label span {
+        display: block;
+        font-size: 0.8em;
+        color: #666;
+        width: 1em;
+    }
+
+    input.hours {
+        width: 2em;
+    }
+    input.employee-name {
         width: 100%;
     }
 
-    .time-cell {
+    label {
         display: flex;
+        flex-direction: row;
+        justify-content: space-between;
         align-items: center;
-        justify-content: center;
-        gap: 5px;
     }
 
-    .message-icon {
-        cursor: pointer;
-        font-size: 14px;
-        color: #007bff;
+    .changed {
+        background-color: #ffeb3b;
     }
 
-    .message-icon:hover {
-        color: #0056b3;
-    }
 </style>

@@ -1,52 +1,64 @@
 <script lang="ts">
-    export let documents: string[] = [];
-    export let onEdit: (documents: string[]) => void;
+    import DeductionDetails from "./DeductionDetails.svelte";
+    import type { DocumentInfo, Deduction, EmployeeHours, LLMOutput } from "./Models";
+
+     interface Props {
+        documents: DocumentInfo[];
+        employeeHours: EmployeeHours[];
+        llmOutput: LLMOutput | null;
+        onEdit: (documentIndex: number, updatedDocument: DocumentInfo) => void;
+    }
+
+    let { documents, employeeHours, llmOutput, onEdit }: Props = $props();
+
+    function handleEditName(documentIndex: number, event: Event) {
+        const input = event.target as HTMLInputElement;
+        const value = input.value.trim();
+
+        if (value) {
+            onEdit(documentIndex, { ...documents[documentIndex], name: value });
+        }
+    }
+    function handleEditContent(documentIndex: number, event: Event) {
+        const textarea = event.target as HTMLTextAreaElement;
+        const value = textarea.value.trim();
+
+        if (value) {
+            onEdit(documentIndex, { ...documents[documentIndex], content: value });
+        }
+    }
 
 </script>
 <ul>
-    {#each documents as document}
+    {#each documents as document, documentIndex}
         <li>
+            <input
+                type="text"
+                value={document.name}
+                oninput={(event) => handleEditName(documentIndex, event)}
+            />
             <textarea
                 rows="5"
                 cols="50"
-                value={document}
-                on:input={(event) => {
-                    const input = event.target as HTMLTextAreaElement;
-                    const newDocuments = [...documents];
-                    newDocuments[documents.indexOf(document)] = input.value;
-                    onEdit(newDocuments);
-                }}
+                value={document.content}
+                oninput={(event) => handleEditContent(documentIndex, event)}
             ></textarea>
-            <button
-                on:click={() => {
-                    const newDocuments = documents.filter((doc) => doc !== document);
-                    onEdit(newDocuments);
-                }}
-            >
-                Delete
-            </button>
+            {#if llmOutput?.deductions.some(deduction => deduction.sourceDocumentIndexes.includes(documentIndex))}
+                <h3>Deduced Facts:</h3>
+                <ul>
+                    {#each llmOutput.deductions as deduction, deductionIndex}
+                        {#if deduction.sourceDocumentIndexes.includes(documentIndex)}
+                            <DeductionDetails
+                                {llmOutput}
+                                {employeeHours}
+                                {deductionIndex}
+                                {documents} />
+                        {/if}
+                    {/each}
+                </ul>
+            {/if}
         </li>
     {/each}
-    <li>
-        <textarea
-            rows="6"
-            cols="50"
-            placeholder="Add new document..."
-            on:input={(event) => {
-                const input = event.target as HTMLTextAreaElement;
-                const newDocuments = [...documents, input.value];
-                onEdit(newDocuments);
-            }}
-        ></textarea>
-        <button
-            on:click={() => {
-                const newDocuments = [...documents, ''];
-                onEdit(newDocuments);
-            }}
-        >
-            Add
-        </button>
-    </li>
 </ul>
 
 <style>
@@ -58,25 +70,24 @@
     li {
         margin-bottom: 1rem;
         display: flex;
-        flex-direction: row;
+        flex-direction: column;
+        border: 1px solid var(--gray-light, #999);
+        padding: 0.5rem;
     }
 
     textarea {
-        width: 100%;
+        width: 90%;
         margin-bottom: 0.5rem;
     }
 
-    button {
-        background-color: #007bff;
-        color: white;
-        border: none;
-        padding: 0.5rem 1rem;
-        cursor: pointer;
-        height: 2em;
-        margin-left: 0.5rem;
+    input[type="text"] {
+        width: 90%;
+        margin-right: 1rem;
     }
 
-    button:hover {
-        background-color: #0056b3;
+    h3 {
+        margin: 0.5rem 0;
     }
+
+
 </style>

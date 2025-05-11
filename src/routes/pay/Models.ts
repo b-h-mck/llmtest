@@ -1,34 +1,80 @@
 import { z } from "zod";
 
-export const WorkPatternSchema = z.object({
-    employee: z.string(),
-    workHours: z.array(z.number()),
+export const DayHoursSchema = z.object({
+    workHours: z.number(),
+    leaveHours: z.number()
 });
 
-export const ReasoningSchema = z.object({
+export const EmployeeHoursSchema = z.object({
+    employee: z.string(),
+    days: z.array(DayHoursSchema),
+});
+
+export const DocumentInfoSchema = z.object({
+    name: z.string(),
+    content: z.string()
+})
+
+export const LLMInputSchema = z.object({
+    employeeHours: z.array(EmployeeHoursSchema),
+    documents: z.array(DocumentInfoSchema)
+});
+
+export const DeductionSchema = z.object({
+    sourceDocumentIndexes: z.array(z.number()),
+    sourceDeductionIndexes: z.array(z.number()),
     assumptions: z.array(z.string()),
-    justifications: z.array(z.string()),
-    unfinishedWork: z.array(z.string()),
-    additionalNotes: z.array(z.string()),
+    description: z.string(),
 });
 
-
-export const ReasonedPayHoursSchema = z.object({
-    employee: z.string(),
-    workHours: z.array(z.number()),
-    leaveHours: z.array(z.number()),
-    reasoning: ReasoningSchema,
+export const ChangeSchema = z.object({
+    employeeIndex: z.number(),
+    dayIndex: z.number(),
+    newWorkHours: z.number().nullable().optional(),
+    newLeaveHours: z.number().nullable().optional(),
+    deductionIndex : z.number()
 });
 
-export const ReasonedPayHoursListSchema = z.object({
-        hours: z.array(ReasonedPayHoursSchema),
-        reasoning: ReasoningSchema,
-    }
-);
+export const UnfinishedWorkSchema = z.object({
+    employeeIndex: z.number().nullable().optional(),
+    dayIndex: z.number().nullable().optional(),
+    deductionIndex: z.number(),
+    description: z.string()
+});
 
-export type WorkPattern = z.infer<typeof WorkPatternSchema>;
-export type Reasoning = z.infer<typeof ReasoningSchema>;
-export type ReasonedPayHours = z.infer<typeof ReasonedPayHoursSchema>;
-export type ReasonedPayHoursList = z.infer<typeof ReasonedPayHoursListSchema>;
+export const LLMOutputSchema = z.object({
+    deductions: z.array(DeductionSchema),
+    changes: z.array(ChangeSchema),
+    unfinishedWork: z.array(UnfinishedWorkSchema),
+})
 
 
+
+export type EmployeeHours = z.infer<typeof EmployeeHoursSchema>;
+export type DocumentInfo = z.infer<typeof DocumentInfoSchema>;
+export type LLMInput = z.infer<typeof LLMInputSchema>;
+
+export type Deduction = z.infer<typeof DeductionSchema>;
+export type Change = z.infer<typeof ChangeSchema>;
+export type UnfinishedWork = z.infer<typeof UnfinishedWorkSchema>;
+export type LLMOutput = z.infer<typeof LLMOutputSchema>;
+
+
+export function createEmployeeHours(employee: string, dayHours: number[]): EmployeeHours {
+    // Ensure the array has 7 elements, padding with 0 or truncating as necessary
+    dayHours = dayHours.slice(0, 7).concat(new Array(7 - dayHours.length).fill(0));
+    return {
+        employee,
+        days: dayHours.map((hours, index) => ({
+            workHours: hours,
+            leaveHours: 0
+        }))
+    };
+}
+
+export function createDocumentInfo(name: string, content: string): DocumentInfo {
+    return {
+        name,
+        content
+    };
+}

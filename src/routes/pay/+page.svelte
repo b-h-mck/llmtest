@@ -1,33 +1,17 @@
 <script lang="ts">
-    import { json } from "@sveltejs/kit";
-    import CollapsibleSection from "./CollapsibleSection.svelte";
     import DocumentList from "./DocumentList.svelte";
     import EmployeeTimes from "./EmployeeTimes.svelte";
-    import { initialDocuments, initialWorkPatterns } from "./InitialData";
-    import type { ReasonedPayHoursList } from "./Models";
-    import Reasonings from "./ReasoningDisplay.svelte";
+    import { initialDocuments, initialEmployeeHours } from "./InitialData";
+    import type { DocumentInfo, EmployeeHours, LLMOutput } from "./Models";
+    import CellDetails from "./CellDetails.svelte";
 
-    let workPatterns = initialWorkPatterns;
-    let documents = initialDocuments;
+    let employeeHours : EmployeeHours[] = $state(initialEmployeeHours);
+    let documents : DocumentInfo[] = $state(initialDocuments);
+    let isProcessing = $state(false);
+    let llmOutput : LLMOutput | null = $state(null);
+    let errorMessage: string | null = $state(null);
+    let selectedCell: { employeeIndex: number; dayIndex: number } | null = $state(null);
 
-    let reasonedPayHours: ReasonedPayHoursList | null = null;
-
-    let isProcessing = false;
-    let errorMessage: string | null = null;
-
-    function handleEditHours(index: number, day: number, value: number) {
-        workPatterns[index].workHours[day] = value;
-        workPatterns = [...workPatterns]; // Trigger reactivity
-    }
-
-    function handleEditName(index: number, value: string) {
-        workPatterns[index].employee = value;
-        workPatterns = [...workPatterns]; // Trigger reactivity
-    }
-
-    function handleEditDocuments(newDocuments: string[]) {
-        documents = newDocuments;
-    }
 
     async function handleDoAIMagic() {
         isProcessing = true; // Set processing state to true
@@ -36,7 +20,7 @@
             const response = await fetch('/api/pay', {
                 method: 'POST',
                 headers: { 'Content-Type': 'application/json' },
-                body: JSON.stringify({ workPatterns, documents }),
+                body: JSON.stringify({ employeeHours, documents }),
             });
 
             const data = await response.json();
@@ -51,7 +35,7 @@
             console.log('Data:', data);
             console.log('Data.reply:', data.reply);
             console.log('replyObject:', replyObject);
-            reasonedPayHours = replyObject;
+            llmOutput = replyObject;
             errorMessage = null; 
 
         } catch (error: any) {
@@ -61,27 +45,43 @@
             isProcessing = false; // Reset processing state
         }
     }
+
+    function handleEditEmployee(employeeIndex: number, updatedEmployee: EmployeeHours) {
+        employeeHours[employeeIndex] = updatedEmployee;
+    }
+
+    function handleSelectCell(employeeIndex: number, dayIndex: number) {
+        selectedCell = { employeeIndex, dayIndex };
+    }
+
+    function handleEditDocuments(documentIndex: number, updatedDocument: DocumentInfo) {
+        documents[documentIndex] = updatedDocument;
+    }
+
 </script>
 
 <section>
     <h1>LLM Payroll Test</h1>
-    <h2>Employee Work Patterns</h2>
-    <EmployeeTimes {workPatterns} onEdit={handleEditHours} editableNames onEditName={handleEditName} />
+    <h2>Employee Hours</h2>
+    <div class="hours-and-sidebars">
+        <EmployeeTimes {employeeHours} changes={llmOutput?.changes} onEdit={handleEditEmployee} onSelect={handleSelectCell} />
+        <div class="sidebars">
+            {#if selectedCell}
+                <CellDetails
+                    {selectedCell}
+                    {employeeHours}
+                    {llmOutput} />
+            {/if}
+            <div>Test 2</div>
+        </div>
+    </div>
     <h2>Documents</h2>
-    <DocumentList documents={documents} onEdit={handleEditDocuments} />
+    <DocumentList {documents} {llmOutput} {employeeHours} onEdit={handleEditDocuments} />
     <section>
-        <button on:click={handleDoAIMagic} class="do-ai-magic" class:psychedelic={isProcessing}>
+        <button onclick={handleDoAIMagic} class="do-ai-magic" class:psychedelic={isProcessing}>
             {isProcessing ? 'Processing...' : 'Do AI Magic!'}
         </button>
     </section>
-    {#if reasonedPayHours}
-    <h2>Hours for Pay</h2>
-    <EmployeeTimes payHours={reasonedPayHours.hours} onEdit={handleEditHours} />
-    <Reasonings reasoning={reasonedPayHours.reasoning} />
-    {/if}
-    {#if isProcessing}
-        <div class="loading-message">Processing...</div>
-    {/if}
     {#if errorMessage}
         <div class="error-message">
             <strong>Error:</strong> {errorMessage}
@@ -90,6 +90,21 @@
 </section>
 
 <style>
+    .hours-and-sidebars {
+        display: flex;
+        height: 100%; /* Ensure full height */
+    }
+
+    .hours-and-sidebars > :first-child {
+        height: 100%; /* Full height */
+    }
+
+    .hours-and-sidebars > .sidebars {
+        display: flex;
+        flex-direction: column; /* Stack the divs in a column */
+        width: 300px;
+    }
+
     .do-ai-magic {
         background-color: #4CAF50; /* Green */
         border: none;
