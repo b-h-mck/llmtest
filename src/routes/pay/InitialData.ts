@@ -26,14 +26,14 @@ export const initialEmployeeHours : EmployeeHours[] = [
 export const initialDocuments : DocumentInfo[] = [
     { 
         documentId: '0',
-        name: 'TIMESHEET_045.txt',
-        content: 'WINSLET Kate 6 4 0 0 0 0 0'
+        name: 'TimeAssist_WINSLET_KATE.csv',
+        content: '6,4,0,0,0,0,0'
     },
     { 
         documentId: '1',
         name: 'TIMESHEET_046.txt',
-        content: `NEESON Liam 6 4 0 0 5.5 0 0
-MARTIN Noah 6 8 8 0 5 0 0`
+        content: `NEESON Liam 6.0 4.0 0.0 0.0 5.5 0.0 0.0
+MARTIN Noah 6.0 8.0 8.0 0.0 5.0 0.0 0.0`
     },
     { 
         documentId: '2',

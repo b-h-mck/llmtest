@@ -36,15 +36,20 @@ The output should be a list of actions to take to bring the employee hours in li
   this should be the original leave hours.
 - A justification for the leave hours. This should be a string that states the text that was used to identify the leave hours, or justifies why it is not known. This can be null if the leave hours are unchanged.
 
+IMPORTANT: employeeId in the output must match an employeeId in the input, or be null. Don't just make up an employeeId or put inexplicable dots in each one.
 
 # Employee names
 
-Employees may be referred to in the documents by their full name, first name, last name, initials, nicknames, etc. Only assume an employee is being referred to
-if it's unambiguous. If there are multiple employees with the same name, or if the name is ambiguous, do not assume which employee is being referred to, and instead
-leave the employeeId null and include in the justification why it couldn't be determined.
+Employees may be referred to in the documents by their full name, first name, last name, initials, nicknames, etc.
 
-There are several different ways to refer to an employee:
-- Their full name, as appears in the input
+If you can uniquely identify an employee from the name given in the document, you can assume it is them. Set the employeeId to the matching employee's ID, and mention
+what's in the document in the employeeIdJustification.
+
+If you can't uniquely identify an employee (either the name could refer to more than one employee, or it doesn't match any employee), do not guess. Set the employeeId to 
+null, and include a justification for why it couldn't be determined.
+
+Some examples of how an employee might be referred to in the documents:
+- Their full name
 - Their first name only (e.g. "Roger" for "Roger Vincent")
 - A nickname (e.g. "Jim" for "James")
 - Their last name only (e.g. "Vincent" for "Roger Vincent")
@@ -53,17 +58,14 @@ There are several different ways to refer to an employee:
 - Their last name and first initial (e.g. "Martinez Q." for "Quinn Martinez")
 - Their first name and last initial (e.g. "Quinn M." for "Quinn Martinez")
 - Their first initial and last name (e.g. "D. Prince" for "Diana Prince")
-- Implicitly (e.g. "all staff")
 - Countless other ways
 
-If it is clear and unambiguous which employee is being referred to, you can assume it is them, and include their full name in the employeeName field and a justification.
-But if it's not clear (e.g. there's no matching employee, or there are multiple employees with the same name), do not assume which employee is being referred to. Leave the employeeName null, 
-and include a justification for why it couldn't be determined.
+In all cases, if it can uniquely identify an employee, you can assume it is them. 
+If a name appears that can't be uniquely matched to an employee, the action should still be created. It should just have a null employeeId, and the justification should explain why it couldn't be determined.
 
-If an employee name can't be determined, the employeeName should be null, and the employeeNameJustification should explain why it couldn't be determined. Don't just leave the action out.
+If a document refers to "all staff", or "all employees", or similar, this should result in multiple actions being created, one for each employee in the input.
 
-If a document refers to "all staff", or "all employees", or similar, this should result in an action for each employee in the input.
-
+IMPORTANT: employeeId in the output must match an employeeId in the input, or be null. Don't just make up an employeeId or put inexplicable dots in each one.
 
 # Rules about work and leave hours
 

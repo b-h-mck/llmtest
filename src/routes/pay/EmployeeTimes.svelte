@@ -9,7 +9,7 @@
         onEdit: (employeeIndex: number, employeeHours: EmployeeHours) => void;
     }
 
-    let { employeeHours, onEdit, onSelect } : Props = $props();
+    let { employeeHours, actions, onEdit, onSelect } : Props = $props();
 
     let updatedEmployeeHours = $derived.by(() => {
         const result = employeeHours.map((employee) => ({
@@ -19,23 +19,24 @@
                     changed: false,
                 })),
             }));
-        // if (changes) {
-        //     changes.forEach((change) => {
-        //         const { employeeIndex, dayIndex, newWorkHours, newLeaveHours } = change;
+        if (actions) {
+            actions.forEach((action) => {
+                const { employeeId, dayOfWeek, workHours, leaveHours } = action;
+                const employeeIndex = employeeHours.findIndex((emp) => emp.employeeId === employeeId);
 
-        //         if (employeeIndex >= 0 && employeeIndex < result.length) {
-        //             if (dayIndex >= 0 && dayIndex < result[employeeIndex].days.length) {
-        //                 result[employeeIndex].days[dayIndex].changed = true;
-        //                 if (newWorkHours !== null && newWorkHours !== undefined) {
-        //                     result[employeeIndex].days[dayIndex].workHours = newWorkHours;
-        //                 }
-        //                 if (newLeaveHours !== null && newLeaveHours !== undefined) {
-        //                     result[employeeIndex].days[dayIndex].leaveHours = newLeaveHours;
-        //                 }
-        //             }
-        //         }
-        //     });
-        // }
+                if (employeeIndex >= 0 && employeeIndex < result.length) {
+                    if (dayOfWeek && dayOfWeek >= 0 && dayOfWeek < result[employeeIndex].days.length) {
+                        result[employeeIndex].days[dayOfWeek].changed = true;
+                        if (workHours !== null && workHours !== undefined) {
+                            result[employeeIndex].days[dayOfWeek].workHours = workHours;
+                        }
+                        if (leaveHours !== null && leaveHours !== undefined) {
+                            result[employeeIndex].days[dayOfWeek].leaveHours = leaveHours;
+                        }
+                    }
+                }
+            });
+        }
         return result;
     });
 
