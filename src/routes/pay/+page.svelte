@@ -2,25 +2,31 @@
     import DocumentList from "./DocumentList.svelte";
     import EmployeeTimes from "./EmployeeTimes.svelte";
     import { initialDocuments, initialEmployeeHours } from "./InitialData";
-    import type { DocumentInfo, EmployeeHours, LLMOutput } from "./Models";
+    import type { DocumentInfo, EmployeeHours, LLMInput, LLMOutput } from "./Models";
     import CellDetails from "./CellDetails.svelte";
+    import { json } from "@sveltejs/kit";
 
     let employeeHours : EmployeeHours[] = $state(initialEmployeeHours);
     let documents : DocumentInfo[] = $state(initialDocuments);
     let isProcessing = $state(false);
     let llmOutput : LLMOutput | null = $state(null);
     let errorMessage: string | null = $state(null);
-    let selectedCell: { employeeIndex: number; dayIndex: number } | null = $state(null);
+    let selectedCell: { employeeIndex: number; dayOfWeek: number } | null = $state(null);
 
 
     async function handleDoAIMagic() {
         isProcessing = true; // Set processing state to true
+
+        const input : LLMInput = {
+            employeeHours,
+            documents
+        };
         try {
             // Send the message to the LLM backend
             const response = await fetch('/api/pay', {
                 method: 'POST',
                 headers: { 'Content-Type': 'application/json' },
-                body: JSON.stringify({ employeeHours, documents }),
+                body: JSON.stringify(input),
             });
 
             const data = await response.json();
@@ -32,9 +38,8 @@
 
             const replyObject = JSON.parse(data.reply);
             
-            console.log('Data:', data);
-            console.log('Data.reply:', data.reply);
-            console.log('replyObject:', replyObject);
+            console.log('input:', JSON.parse(JSON.stringify(input)));
+            console.log('output:', replyObject);
             llmOutput = replyObject;
             errorMessage = null; 
 
@@ -50,8 +55,8 @@
         employeeHours[employeeIndex] = updatedEmployee;
     }
 
-    function handleSelectCell(employeeIndex: number, dayIndex: number) {
-        selectedCell = { employeeIndex, dayIndex };
+    function handleSelectCell(employeeIndex: number, dayOfWeek: number) {
+        selectedCell = { employeeIndex, dayOfWeek };
     }
 
     function handleEditDocuments(documentIndex: number, updatedDocument: DocumentInfo) {
@@ -64,19 +69,19 @@
     <h1>LLM Payroll Test</h1>
     <h2>Employee Hours</h2>
     <div class="hours-and-sidebars">
-        <EmployeeTimes {employeeHours} changes={llmOutput?.changes} onEdit={handleEditEmployee} onSelect={handleSelectCell} />
+        <EmployeeTimes {employeeHours} actions={llmOutput?.actions ?? null} onEdit={handleEditEmployee} onSelect={handleSelectCell} />
         <div class="sidebars">
             {#if selectedCell}
                 <CellDetails
                     {selectedCell}
-                    {employeeHours}
+                    llmInput={{documents, employeeHours}}
                     {llmOutput} />
             {/if}
             <div>Test 2</div>
         </div>
     </div>
     <h2>Documents</h2>
-    <DocumentList {documents} {llmOutput} {employeeHours} onEdit={handleEditDocuments} />
+    <DocumentList llmInput={{documents, employeeHours}} {llmOutput} onEdit={handleEditDocuments} />
     <section>
         <button onclick={handleDoAIMagic} class="do-ai-magic" class:psychedelic={isProcessing}>
             {isProcessing ? 'Processing...' : 'Do AI Magic!'}

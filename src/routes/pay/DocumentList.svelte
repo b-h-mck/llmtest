@@ -1,22 +1,23 @@
 <script lang="ts">
-    import DeductionDetails from "./DeductionDetails.svelte";
-    import type { DocumentInfo, Deduction, EmployeeHours, LLMOutput } from "./Models";
+    import ActionDetails from "./ActionDetails.svelte";
+    import ChangeDetails from "./ActionDetails.svelte";
+    import type { DocumentInfo, EmployeeHours, LLMInput, LLMOutput } from "./Models";
+    import UnfinishedWorkDetails from "./UnfinishedWorkDetails.svelte";
 
      interface Props {
-        documents: DocumentInfo[];
-        employeeHours: EmployeeHours[];
+        llmInput: LLMInput;
         llmOutput: LLMOutput | null;
         onEdit: (documentIndex: number, updatedDocument: DocumentInfo) => void;
     }
 
-    let { documents, employeeHours, llmOutput, onEdit }: Props = $props();
+    let { llmInput, llmOutput, onEdit }: Props = $props();
 
     function handleEditName(documentIndex: number, event: Event) {
         const input = event.target as HTMLInputElement;
         const value = input.value.trim();
 
         if (value) {
-            onEdit(documentIndex, { ...documents[documentIndex], name: value });
+            onEdit(documentIndex, { ...llmInput.documents[documentIndex], name: value });
         }
     }
     function handleEditContent(documentIndex: number, event: Event) {
@@ -24,13 +25,13 @@
         const value = textarea.value.trim();
 
         if (value) {
-            onEdit(documentIndex, { ...documents[documentIndex], content: value });
+            onEdit(documentIndex, { ...llmInput.documents[documentIndex], content: value });
         }
     }
 
 </script>
 <ul>
-    {#each documents as document, documentIndex}
+    {#each llmInput.documents as document, documentIndex}
         <li>
             <input
                 type="text"
@@ -43,20 +44,39 @@
                 value={document.content}
                 oninput={(event) => handleEditContent(documentIndex, event)}
             ></textarea>
-            {#if llmOutput?.deductions.some(deduction => deduction.sourceDocumentIndexes.includes(documentIndex))}
-                <h3>Deduced Facts:</h3>
-                <ul>
-                    {#each llmOutput.deductions as deduction, deductionIndex}
-                        {#if deduction.sourceDocumentIndexes.includes(documentIndex)}
-                            <DeductionDetails
-                                {llmOutput}
-                                {employeeHours}
-                                {deductionIndex}
-                                {documents} />
-                        {/if}
-                    {/each}
-                </ul>
+            {#if llmOutput?.actions.some(action => action.documentId === document.documentId)}
+                <h3>Actions:</h3>
+                {#each llmOutput.actions as action, actionIndex}
+                    {#if action.documentId === document.documentId}
+                        <ActionDetails
+                            {llmOutput}
+                            {llmInput}
+                            {actionIndex} />
+                    {/if}
+                {/each}
             {/if}
+            <!-- {#if llmOutput?.changes.some(change => change.sourceDocumentIndex === documentIndex)}
+                <h3>Changes:</h3>
+                {#each llmOutput.changes as change, changeIndex}
+                    {#if change.sourceDocumentIndex === documentIndex}
+                        <ChangeDetails
+                            {llmOutput}
+                            {llmInput}
+                            {changeIndex} />
+                    {/if}
+                {/each}
+            {/if}
+            {#if llmOutput?.unfinishedWork.some(unfinishedWork => unfinishedWork.sourceDocumentIndex === documentIndex)}
+                <h3>Unfinished:</h3>
+                {#each llmOutput.unfinishedWork as unfinishedWork, unfinishedWorkIndex}
+                    {#if unfinishedWork.sourceDocumentIndex === documentIndex}
+                        <UnfinishedWorkDetails
+                            {llmOutput}
+                            {llmInput}
+                            {unfinishedWorkIndex} />
+                    {/if}
+                {/each}
+            {/if} -->
         </li>
     {/each}
 </ul>

@@ -1,18 +1,25 @@
 <script lang="ts">
-    import { ChangeSchema, type Change, type Deduction, type EmployeeHours, type LLMOutput } from "./Models";
+    import ActionDetails from "./ActionDetails.svelte";
+import ChangeDetails from "./ActionDetails.svelte";
+    import { type EmployeeHours, type LLMInput, type LLMOutput } from "./Models";
+    import UnfinishedWorkDetails from "./UnfinishedWorkDetails.svelte";
 
     interface Props {
-        selectedCell: { employeeIndex: number; dayIndex: number }
-        employeeHours: EmployeeHours[];
+        selectedCell: { employeeIndex: number; dayOfWeek: number }
+        llmInput: LLMInput;
         llmOutput: LLMOutput | null;
     }
 
-    const {selectedCell, employeeHours, llmOutput} : Props = $props();
+    const {selectedCell, llmInput, llmOutput} : Props = $props();
+
+    const employeeId = llmInput.employeeHours[selectedCell.employeeIndex].employeeId;
+    const actions = llmOutput?.actions.filter((action) => action.employeeId === employeeId && action.dayOfWeek === selectedCell.dayOfWeek) ?? null;
 
     const {employeeName, dayName, oldWorkHours, oldLeaveHours, newWorkHours, newLeaveHours} = $derived.by(() => {
-        const { employeeIndex, dayIndex } = selectedCell;
-        const employee = employeeHours[employeeIndex];
-        const day = employee.days[dayIndex];
+        const { employeeIndex, dayOfWeek } = selectedCell;
+        const employee = llmInput.employeeHours[employeeIndex];
+        const day = employee?.days[dayOfWeek] ?? null;
+        const action = llmOutput?.actions.find((action) => action.employeeId === employeeId && action.dayOfWeek === dayOfWeek) ?? null;
 
         const dayName = [
             "Monday",
@@ -22,19 +29,17 @@
             "Friday",
             "Saturday",
             "Sunday"
-        ][dayIndex] || "";
+        ][dayOfWeek] || "";
 
-        let change = llmOutput?.changes.find((change) => change.employeeIndex === employeeIndex && change.dayIndex === dayIndex) ?? null;
-        let deduction = llmOutput && change ? llmOutput.deductions[change.deductionIndex] ?? null : null;
+        //let change = llmOutput?.changes.find((change) => change.employeeIndex === employeeIndex && change.dayIndex === dayIndex) ?? null;
 
         return { 
-            employeeName : employee.employee, 
+            employeeName : employee?.name ?? null, 
             dayName, 
-            oldWorkHours : day.workHours, 
-            oldLeaveHours: day.leaveHours, 
-            newWorkHours: change?.newWorkHours ?? day.workHours, 
-            newLeaveHours : change?.newLeaveHours ?? day.leaveHours,
-            deduction
+            oldWorkHours : day?.workHours ?? null, 
+            oldLeaveHours: day?.leaveHours ?? null, 
+            newWorkHours: action?.workHours ?? day?.workHours ?? null, 
+            newLeaveHours : action?.leaveHours ?? day?.leaveHours ?? null
         };
     });
 
@@ -45,6 +50,38 @@
     <h3>{dayName}</h3>
     <p>Work hours: {oldWorkHours} {#if oldWorkHours !== newWorkHours}<strong>→  {newWorkHours}</strong>{/if}</p>
     <p>Leave hours: {oldLeaveHours} {#if oldLeaveHours !== newLeaveHours}<strong>→  {newLeaveHours}</strong>{/if}</p>
+    {#if llmOutput && actions?.length}
+        <h3>Actions:</h3>
+        {#each actions as action, actionIndex}
+            <ActionDetails
+                {llmOutput}
+                {llmInput}
+                {actionIndex} />
+        {/each}
+    {/if}
+    <!-- {#if llmOutput?.changes.some(change => change.dayIndex === selectedCell.dayIndex && change.employeeIndex === selectedCell.employeeIndex)}
+        <h3>Changes:</h3>
+        {#each llmOutput.changes as change, changeIndex}
+            {#if change.dayIndex === selectedCell.dayIndex && change.employeeIndex === selectedCell.employeeIndex}
+                <ChangeDetails
+                    {llmOutput}
+                    {llmInput}
+                    {changeIndex} />
+            {/if}
+        {/each}
+        {/if} -->
+    <!-- {#if llmOutput?.unfinishedWork.some(unfinishedWork => unfinishedWork.dayIndex === selectedCell.dayIndex && unfinishedWork.employeeIndex === selectedCell.employeeIndex)}
+        <h3>Unfinished:</h3>
+        {#each llmOutput.unfinishedWork as unfinishedWork, unfinishedWorkIndex}
+            {#if unfinishedWork.dayIndex === selectedCell.dayIndex && unfinishedWork.employeeIndex === selectedCell.employeeIndex}
+                <UnfinishedWorkDetails
+                    {llmOutput}
+                    {llmInput}
+                    {unfinishedWorkIndex} />
+            {/if}
+        {/each}
+    {/if} -->
+    
 </section>
 
 <style>

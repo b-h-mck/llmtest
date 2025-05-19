@@ -1,15 +1,15 @@
 <script lang="ts">
-    import type { Change, EmployeeHours } from "./Models";
+    import type { Action, EmployeeHours } from "./Models";
     
 
     interface Props {
         employeeHours: EmployeeHours[];
-        changes?: Change[];
-        onSelect: (employeeIndex: number, dayIndex: number) => void;
+        actions: Action[] | null;
+        onSelect: (employeeIndex: number, dayOfWeek: number) => void;
         onEdit: (employeeIndex: number, employeeHours: EmployeeHours) => void;
     }
 
-    let { employeeHours, changes, onEdit, onSelect } : Props = $props();
+    let { employeeHours, onEdit, onSelect } : Props = $props();
 
     let updatedEmployeeHours = $derived.by(() => {
         const result = employeeHours.map((employee) => ({
@@ -19,23 +19,23 @@
                     changed: false,
                 })),
             }));
-        if (changes) {
-            changes.forEach((change) => {
-                const { employeeIndex, dayIndex, newWorkHours, newLeaveHours } = change;
+        // if (changes) {
+        //     changes.forEach((change) => {
+        //         const { employeeIndex, dayIndex, newWorkHours, newLeaveHours } = change;
 
-                if (employeeIndex >= 0 && employeeIndex < result.length) {
-                    if (dayIndex >= 0 && dayIndex < result[employeeIndex].days.length) {
-                        result[employeeIndex].days[dayIndex].changed = true;
-                        if (newWorkHours !== null && newWorkHours !== undefined) {
-                            result[employeeIndex].days[dayIndex].workHours = newWorkHours;
-                        }
-                        if (newLeaveHours !== null && newLeaveHours !== undefined) {
-                            result[employeeIndex].days[dayIndex].leaveHours = newLeaveHours;
-                        }
-                    }
-                }
-            });
-        }
+        //         if (employeeIndex >= 0 && employeeIndex < result.length) {
+        //             if (dayIndex >= 0 && dayIndex < result[employeeIndex].days.length) {
+        //                 result[employeeIndex].days[dayIndex].changed = true;
+        //                 if (newWorkHours !== null && newWorkHours !== undefined) {
+        //                     result[employeeIndex].days[dayIndex].workHours = newWorkHours;
+        //                 }
+        //                 if (newLeaveHours !== null && newLeaveHours !== undefined) {
+        //                     result[employeeIndex].days[dayIndex].leaveHours = newLeaveHours;
+        //                 }
+        //             }
+        //         }
+        //     });
+        // }
         return result;
     });
 
@@ -44,7 +44,7 @@
         const input = event.target as HTMLInputElement;
         const value = input.value.trim();
         if (value) {
-            onEdit(index, { ...updatedEmployeeHours[index], employee: value });
+            onEdit(index, { ...updatedEmployeeHours[index], name: value });
         }
     }
 
@@ -96,7 +96,7 @@
                     <input
                         type="text"
                         class="employee-name"
-                        value={employeeHours.employee}
+                        value={employeeHours.name}
                         oninput={(event) => handleEditName(employeeIndex, event)}
                     />
                 </th>
