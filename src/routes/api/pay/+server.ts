@@ -9,7 +9,7 @@ const openai = new OpenAI({ apiKey: process.env.OPENAI_API_KEY });
 
 export const POST: RequestHandler = async ({ request }) => {
     try {
-        const { employeeWorkPatterns, documents } = await request.json();
+        const requestJson = await request.json();
 
         const response = await openai.responses.parse({
             model: "gpt-4o-2024-08-06",
@@ -19,16 +19,12 @@ export const POST: RequestHandler = async ({ request }) => {
                     content: systemPrompt
                 },
                 {
-                    role: "system",
-                    content: `Employee Work Patterns: ${JSON.stringify(employeeWorkPatterns)}`
-                },
-                {
                     role: "user",
-                    content: `Documents: ${JSON.stringify(documents)}`
+                    content: JSON.stringify(requestJson)
                 }
             ],
             text: {
-                format: zodTextFormat(LLMOutputSchema, "reasonedHoursForPayList"),
+                format: zodTextFormat(LLMOutputSchema, "llmOutput"),
             },
         });
         const reply = response.output_text;
