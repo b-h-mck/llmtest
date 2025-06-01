@@ -1,16 +1,19 @@
 <script lang="ts">
     import DocumentList from "./DocumentList.svelte";
-    import EmployeeTimes from "./EmployeeTimes.svelte";
     import { initialDocuments, initialEmployees } from "./InitialData";
-    import CellDetails from "./CellDetails.svelte";
-    import { json } from "@sveltejs/kit";
     import EmployeeList from "./EmployeeList.svelte";
-    import { createEmployees, type DocumentInfo, type Employee } from "./Models";
+    import { createEmployees, type CalculatedHours, type DocumentInfo, type Employee, type LLMOutput } from "./Models";
+    import Timesheet from "./Timesheet.svelte";
 
     let employees : Employee[] = $state(createEmployees(initialEmployees));
     let documents : DocumentInfo[] = $state(initialDocuments);
+    let calculatedHours : CalculatedHours[] = $state([]);
 
     $inspect(employees);
+
+    function onAIMagicOutput(documentIndex: number, output: LLMOutput) {
+        calculatedHours = [...calculatedHours, ...output.calculatedHours];
+    }
 
 </script>
 
@@ -22,7 +25,11 @@
     </div>
     <h2>Documents</h2>
     <div>
-        <DocumentList bind:documents {employees} onAIMagicOutput={() => {}} />
+        <DocumentList bind:documents {employees} {onAIMagicOutput} />
+    </div>
+    <h2>Timesheet</h2>
+    <div>
+        <Timesheet {employees} {calculatedHours} />
     </div>
 </section>
 

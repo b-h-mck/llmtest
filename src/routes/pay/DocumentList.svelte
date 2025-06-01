@@ -1,9 +1,6 @@
 <script lang="ts">
     import { systemPrompt } from "../api/pay/Prompts/Prompt";
-    import ActionDetails from "./ActionDetails.svelte";
-    import ChangeDetails from "./ActionDetails.svelte";
     import type { CalculatedHours, DocumentInfo, Employee, LLMInput, LLMOutput } from "./Models";
-    import UnfinishedWorkDetails from "./UnfinishedWorkDetails.svelte";
 
      interface Props {
         employees: Employee[];
@@ -43,6 +40,7 @@
             console.log('output:', replyObject);
             aiMagicOutput[index] = replyObject;
             errorMessages[index] = null;
+            onAIMagicOutput(index, replyObject);
 
         } catch (error: any) {
             // Add the error message to the chat
@@ -171,28 +169,6 @@
             {/if}
 
 
-            <!-- {#if llmOutput?.changes.some(change => change.sourceDocumentIndex === documentIndex)}
-                <h3>Changes:</h3>
-                {#each llmOutput.changes as change, changeIndex}
-                    {#if change.sourceDocumentIndex === documentIndex}
-                        <ChangeDetails
-                            {llmOutput}
-                            {llmInput}
-                            {changeIndex} />
-                    {/if}
-                {/each}
-            {/if}
-            {#if llmOutput?.unfinishedWork.some(unfinishedWork => unfinishedWork.sourceDocumentIndex === documentIndex)}
-                <h3>Unfinished:</h3>
-                {#each llmOutput.unfinishedWork as unfinishedWork, unfinishedWorkIndex}
-                    {#if unfinishedWork.sourceDocumentIndex === documentIndex}
-                        <UnfinishedWorkDetails
-                            {llmOutput}
-                            {llmInput}
-                            {unfinishedWorkIndex} />
-                    {/if}
-                {/each}
-            {/if} -->
         </li>
     {/each}
 </ul>

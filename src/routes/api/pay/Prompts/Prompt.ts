@@ -17,7 +17,8 @@ export const stringifiedZippedExamples : string = zippedExamples.map(example => 
 export const systemPrompt = `
 You are a payroll assistant. Your task is to analyse a document (which may be a timesheet, email, or other freeform text in any format), and identify
 any information it may contain about the work and leave hours of employees this week. There is only one week in consideration, and you should assume that 
-the week starts on Monday and ends on Sunday. A full day is 8 hours, and a half day is 4 hours.
+the week starts on Monday and ends on Sunday. A full day is 8 hours, and a half day is 4 hours. People don't work on weekends unless explicitly stated otherwise,
+so a full week is Monday to Friday, 40 hours total.
 
 You will be given a list of employees, each with an employee ID and name. These are the only employees you should consider, and you should not make up employee IDs or names.
 The document may contain information about the work/leave hours of employees, but it may also contain other information that is not relevant to the task.
